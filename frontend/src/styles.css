@@ -517,8 +517,71 @@ td.mono {
   flex-wrap: wrap;
 }
 
-.assoc {
-  box-shadow: inset 3px 0 0 var(--accent);
+tr.highlight,
+.card.highlight {
+  background: rgba(62, 224, 164, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(62, 224, 164, 0.35);
+}
+
+.concern-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.concern-link {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  max-width: 280px;
+}
+
+.concern-link:hover {
+  border-color: rgba(62, 224, 164, 0.4);
+  background: var(--accent-dim);
+}
+
+.concern-link.section {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.concern-link .meta {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: normal;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.playbook {
+  display: grid;
+  gap: 14px;
+}
+
+.playbook-step h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.playbook-step p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .error-banner {

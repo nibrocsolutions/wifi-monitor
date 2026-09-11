@@ -25,6 +25,7 @@ from .models import (
     TrafficSample,
     WirelessLink,
 )
+from .traffic import collect_live_traffic
 from .util import freq_to_band, freq_to_channel, normalize_mac, read_text, run_cmd, which
 from .vendors import vendor_from_mac
 
@@ -40,6 +41,7 @@ class Collector:
         self._last_stats: dict[str, dict[str, int]] = {}
         self._last_stats_at: float | None = None
         self._cpu_sample: tuple[float, float] | None = None
+        self._seen_remotes: dict[str, float] = {}
 
     def capabilities(self) -> dict[str, bool]:
         return {
@@ -49,6 +51,7 @@ class Collector:
             "ping": which("ping") is not None,
             "arp-scan": which("arp-scan") is not None,
             "nmap": which("nmap") is not None,
+            "ss": which("ss") is not None,
             "demo": self.force_demo,
         }
 
@@ -58,6 +61,7 @@ class Collector:
         if self.force_demo:
             interfaces = self._interfaces()
             traffic = self._traffic(interfaces)
+            live_traffic = collect_live_traffic(self._seen_remotes)
             system = self._system()
             point = TrafficPoint(
                 ts=time.time(),
@@ -71,6 +75,7 @@ class Collector:
                 demo=True,
                 interfaces=interfaces,
                 traffic=traffic,
+                live_traffic=live_traffic,
                 history=self.history.snapshot(),
                 system=system,
                 capabilities=caps,
@@ -99,6 +104,7 @@ class Collector:
         devices = self.devices.observe(devices)
         internet = self._internet(gateway_ip)
         traffic = self._traffic(interfaces)
+        live_traffic = collect_live_traffic(self._seen_remotes)
         system = self._system()
         associated = next((n for n in nearby if n.bssid and n.bssid == link.bssid), None)
         access_point = AccessPoint(
@@ -136,6 +142,7 @@ class Collector:
             internet=internet,
             traffic=traffic,
             history=self.history.snapshot(),
+            live_traffic=live_traffic,
             system=system,
             gateway_ip=gateway_ip,
             local_ip=local_ip,

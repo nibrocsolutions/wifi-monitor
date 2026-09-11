@@ -25,4 +25,5 @@ def test_snapshot_has_sections():
     assert "internet" in body
     assert "interfaces" in body
     assert "system" in body
-    assert body["link"]["ssid"]
+    assert "live_traffic" in body
+    assert "flows" in body["live_traffic"]

@@ -1,6 +1,14 @@
 export type Severity = "critical" | "warning" | "info";
 export type HealthLevel = "excellent" | "good" | "fair" | "poor" | "critical";
 
+export interface ConcernLink {
+  label: string;
+  href: string;
+  kind: string;
+  value: string;
+  meta: string | null;
+}
+
 export interface Concern {
   id: string;
   severity: Severity;
@@ -8,6 +16,7 @@ export interface Concern {
   detail: string;
   section: string;
   recommendation: string;
+  links?: ConcernLink[];
 }
 
 export interface WirelessLink {
@@ -138,6 +147,55 @@ export interface TrafficPoint {
   signal_dbm: number | null;
 }
 
+export interface SocketFlow {
+  protocol: string;
+  state: string | null;
+  local_ip: string | null;
+  local_port: number | null;
+  remote_ip: string | null;
+  remote_port: number | null;
+  service: string | null;
+  direction: string;
+  scope: string;
+  recv_q: number;
+  send_q: number;
+  process: string | null;
+  new: boolean;
+  unusual: boolean;
+  notes: string[];
+}
+
+export interface RemoteTalker {
+  ip: string;
+  count: number;
+  ports: number[];
+  scope: string;
+  service_hint: string | null;
+}
+
+export interface PortCount {
+  port: number;
+  protocol: string;
+  count: number;
+  service: string | null;
+}
+
+export interface LiveTraffic {
+  captured_at: string | null;
+  source: string | null;
+  established: number;
+  listen: number;
+  udp: number;
+  syn_sent: number;
+  unique_remotes: number;
+  wan_remotes: number;
+  lan_remotes: number;
+  flows: SocketFlow[];
+  listeners: SocketFlow[];
+  top_remotes: RemoteTalker[];
+  top_ports: PortCount[];
+}
+
 export interface SystemInfo {
   hostname: string | null;
   os: string | null;
@@ -172,6 +230,7 @@ export interface Snapshot {
   internet: InternetStatus;
   traffic: TrafficSample[];
   history: TrafficPoint[];
+  live_traffic: LiveTraffic;
   system: SystemInfo;
   gateway_ip: string | null;
   local_ip: string | null;
