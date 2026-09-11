@@ -1,0 +1,20 @@
+services:
+  wifi-monitor:
+    build: .
+    image: wifi-monitor:local
+    container_name: wifi-monitor
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    environment:
+      WIFI_MONITOR_PORT: "8085"
+      WIFI_MONITOR_DATA_DIR: /data
+      WIFI_MONITOR_POLL: "5"
+      TZ: ${TZ:-America/New_York}
+    volumes:
+      - wifi-monitor-data:/data
+    # Host networking exposes the UI on port 8085 of the Pi.
+    # Privileged mode is required for nl80211 wireless scans.
+
+volumes:
+  wifi-monitor-data:
