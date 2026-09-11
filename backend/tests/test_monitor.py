@@ -169,6 +169,22 @@ def test_evil_twin_and_weak_signal():
     assert "signal-critical" in ids
 
 
+def test_demo_snapshot_has_chart_history():
+    from datetime import datetime, timezone
+
+    from app.demo import demo_snapshot
+    from app.models import Snapshot, TrafficPoint
+
+    sparse = Snapshot(
+        generated_at=datetime.now(timezone.utc).isoformat(),
+        history=[TrafficPoint(ts=1, rx_bps=0, tx_bps=0, signal_dbm=-50)],
+    )
+    demo = demo_snapshot(sparse)
+    assert len(demo.history) >= 30
+    assert demo.history[10].rx_bps > 0
+    assert demo.link.ssid
+
+
 def test_new_device_and_health_score():
     snap = _snap(devices=[LanDevice(ip="192.168.1.50", mac="11:22:33:44:55:66", new=True)])
     concerns = analyze(snap)

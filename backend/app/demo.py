@@ -274,20 +274,19 @@ def demo_snapshot(base: Snapshot) -> Snapshot:
         )
     ]
     history = list(base.history)
-    if not history:
+    if len(history) < 12:
         import math
 
         now_ts = datetime.now(timezone.utc).timestamp()
-        for i in range(60):
-            t = now_ts - (59 - i) * 5
-            history.append(
-                TrafficPoint(
-                    ts=t,
-                    rx_bps=1_800_000 + math.sin(i / 6) * 600_000,
-                    tx_bps=120_000 + math.cos(i / 8) * 40_000,
-                    signal_dbm=-48 - abs(math.sin(i / 9)) * 4,
-                )
+        history = [
+            TrafficPoint(
+                ts=now_ts - (59 - i) * 5,
+                rx_bps=1_800_000 + math.sin(i / 6) * 600_000,
+                tx_bps=120_000 + math.cos(i / 8) * 40_000,
+                signal_dbm=-48 - abs(math.sin(i / 9)) * 4,
             )
+            for i in range(60)
+        ]
     system = base.system.model_copy(
         update={
             "hostname": base.system.hostname or "wifi-monitor",
