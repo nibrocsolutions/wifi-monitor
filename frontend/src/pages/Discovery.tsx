@@ -1,10 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useSnapshot } from "../api";
 import { dash, formatDbm } from "../format";
 import { Badge, SignalBars } from "../components/Widgets";
 
+function useFocus() {
+  const [params] = useSearchParams();
+  return (params.get("focus") || "").toLowerCase();
+}
+
 export function NearbyPage() {
   const { snapshot } = useSnapshot();
+  const focus = useFocus();
   const [query, setQuery] = useState("");
   const rows = useMemo(() => {
     const list = snapshot?.nearby ?? [];
@@ -18,6 +25,11 @@ export function NearbyPage() {
         .includes(q),
     );
   }, [snapshot, query]);
+
+  useEffect(() => {
+    if (!focus) return;
+    document.getElementById(`row-${focus}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focus, rows]);
 
   if (!snapshot) return <div className="card empty">Collecting the first sample…</div>;
 
@@ -48,28 +60,36 @@ export function NearbyPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((n) => (
-                <tr key={n.bssid ?? `${n.ssid}-${n.channel}`} className={n.is_associated ? "assoc" : undefined}>
-                  <td>{n.ssid ?? <span className="badge muted">hidden</span>}</td>
-                  <td>
-                    <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                      <SignalBars dbm={n.signal_dbm} /> {formatDbm(n.signal_dbm)}
-                    </span>
-                  </td>
-                  <td>{dash(n.band)}</td>
-                  <td>{dash(n.channel)}</td>
-                  <td>
-                    <Badge tone={n.security === "Open" || n.security === "WEP" ? "bad" : "ok"}>{n.security ?? "—"}</Badge>
-                  </td>
-                  <td className="mono">{dash(n.bssid)}</td>
-                  <td>{dash(n.vendor)}</td>
-                  <td>{n.width_mhz ? `${n.width_mhz} MHz` : "—"}</td>
-                  <td className="row-tags">
-                    {n.is_associated ? <Badge tone="ok">Associated</Badge> : null}
-                    {n.is_duplicate_ssid ? <Badge tone="warn">Duplicate SSID</Badge> : null}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((n) => {
+                const id = (n.bssid || "").toLowerCase();
+                const highlighted = Boolean(focus) && (id === focus || (n.ssid || "").toLowerCase() === focus);
+                return (
+                  <tr
+                    key={n.bssid ?? `${n.ssid}-${n.channel}`}
+                    id={id ? `row-${id}` : undefined}
+                    className={[n.is_associated ? "assoc" : "", highlighted ? "highlight" : ""].filter(Boolean).join(" ")}
+                  >
+                    <td>{n.ssid ?? <span className="badge muted">hidden</span>}</td>
+                    <td>
+                      <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                        <SignalBars dbm={n.signal_dbm} /> {formatDbm(n.signal_dbm)}
+                      </span>
+                    </td>
+                    <td>{dash(n.band)}</td>
+                    <td>{dash(n.channel)}</td>
+                    <td>
+                      <Badge tone={n.security === "Open" || n.security === "WEP" ? "bad" : "ok"}>{n.security ?? "—"}</Badge>
+                    </td>
+                    <td className="mono">{dash(n.bssid)}</td>
+                    <td>{dash(n.vendor)}</td>
+                    <td>{n.width_mhz ? `${n.width_mhz} MHz` : "—"}</td>
+                    <td className="row-tags">
+                      {n.is_associated ? <Badge tone="ok">Associated</Badge> : null}
+                      {n.is_duplicate_ssid ? <Badge tone="warn">Duplicate SSID</Badge> : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -80,6 +100,7 @@ export function NearbyPage() {
 
 export function DevicesPage() {
   const { snapshot } = useSnapshot();
+  const focus = useFocus();
   const [query, setQuery] = useState("");
   const rows = useMemo(() => {
     const list = snapshot?.devices ?? [];
@@ -89,6 +110,11 @@ export function DevicesPage() {
       [d.hostname, d.ip, d.mac, d.vendor, d.state].filter(Boolean).join(" ").toLowerCase().includes(q),
     );
   }, [snapshot, query]);
+
+  useEffect(() => {
+    if (!focus) return;
+    document.getElementById(`row-${focus}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focus, rows]);
 
   if (!snapshot) return <div className="card empty">Collecting the first sample…</div>;
 
@@ -116,20 +142,27 @@ export function DevicesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((d) => (
-                <tr key={`${d.mac}-${d.ip}`}>
-                  <td>{d.hostname ?? "—"}</td>
-                  <td className="mono">{dash(d.ip)}</td>
-                  <td className="mono">{dash(d.mac)}</td>
-                  <td>{dash(d.vendor)}</td>
-                  <td>{dash(d.state)}</td>
-                  <td className="row-tags">
-                    {d.is_gateway ? <Badge tone="info">Gateway</Badge> : null}
-                    {d.is_self ? <Badge tone="ok">This host</Badge> : null}
-                    {d.new ? <Badge tone="warn">New</Badge> : null}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((d) => {
+                const highlighted = Boolean(focus) && [d.mac, d.ip, d.hostname].some((v) => (v || "").toLowerCase() === focus);
+                return (
+                  <tr
+                    key={`${d.mac}-${d.ip}`}
+                    id={d.mac ? `row-${d.mac.toLowerCase()}` : d.ip ? `row-${d.ip}` : undefined}
+                    className={highlighted ? "highlight" : undefined}
+                  >
+                    <td>{d.hostname ?? "—"}</td>
+                    <td className="mono">{dash(d.ip)}</td>
+                    <td className="mono">{dash(d.mac)}</td>
+                    <td>{dash(d.vendor)}</td>
+                    <td>{dash(d.state)}</td>
+                    <td className="row-tags">
+                      {d.is_gateway ? <Badge tone="info">Gateway</Badge> : null}
+                      {d.is_self ? <Badge tone="ok">This host</Badge> : null}
+                      {d.new ? <Badge tone="warn">New</Badge> : null}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -1,8 +1,8 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSnapshot } from "../api";
 import { formatBps, formatDbm } from "../format";
-import { Badge, HealthRing, SignalBars } from "../components/Widgets";
-import type { Concern } from "../types";
+import { HealthRing, SignalBars } from "../components/Widgets";
+import { ConcernRow } from "../components/ConcernRow";
 
 function severityRank(value: string) {
   if (value === "critical") return 0;
@@ -90,21 +90,6 @@ export function OverviewPage() {
         </div>
       </div>
     </>
-  );
-}
-
-export function ConcernRow({ concern }: { concern: Concern }) {
-  return (
-    <div className="concern">
-      <div>
-        <Badge tone={concern.severity}>{concern.severity}</Badge>
-      </div>
-      <div>
-        <h4>{concern.title}</h4>
-        <p>{concern.detail}</p>
-        <p className="rec">{concern.recommendation}</p>
-      </div>
-    </div>
   );
 }
 

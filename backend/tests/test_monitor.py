@@ -15,7 +15,9 @@ from app.parsers import (
     parse_iwconfig,
     parse_ping,
     parse_proc_net_dev,
+    parse_proc_net_table,
     parse_resolv_conf,
+    parse_ss,
 )
 from app.util import freq_to_band, freq_to_channel, normalize_mac, signal_quality_percent
 from app.vendors import vendor_from_mac
@@ -131,7 +133,31 @@ def test_parse_proc_net_dev():
     assert stats["eth0"]["tx_errors"] == 5
 
 
+def test_parse_sockets():
+    proc = (
+        "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n"
+        "   0: 1801A8C0:1F95 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 1\n"
+        "   1: 1801A8C0:C000 0101A8C0:01BB 01 00000000:00000000 00:00000000 00000000     0        0 2\n"
+    )
+    rows = parse_proc_net_table(proc, "tcp")
+    listen = rows[0]
+    assert listen["state"] == "LISTEN"
+    assert listen["local_ip"] == "192.168.1.24"
+    assert listen["local_port"] == 8085
+    est = rows[1]
+    assert est["remote_ip"] == "192.168.1.1"
+    assert est["remote_port"] == 443
+    ss = parse_ss(
+        "tcp   ESTAB 0 0 192.168.1.24:44190 1.1.1.1:443 users:((\"chrome\",pid=1,fd=3))\n"
+        "udp   UNCONN 0 0 0.0.0.0:5353 0.0.0.0:*\n"
+    )
+    assert ss[0]["remote_ip"] == "1.1.1.1"
+    assert ss[0]["process"] == "chrome"
+    assert ss[1]["local_port"] == 5353
+
+
 def test_vendor_lookup():
+    assert vendor_from_mac("d8:3a:dd:00:00:01") == "Raspberry Pi"
     assert vendor_from_mac("d8:3a:dd:00:00:01") == "Raspberry Pi"
 
 
@@ -167,6 +193,23 @@ def test_evil_twin_and_weak_signal():
     ids = {c.id for c in analyze(snap)}
     assert "evil-twin" in ids
     assert "signal-critical" in ids
+    twin = next(c for c in analyze(snap) if c.id == "evil-twin")
+    bssid_links = [link for link in twin.links if link.kind == "bssid"]
+    assert {link.value for link in bssid_links} == {"aa:aa:aa:aa:aa:aa", "bb:bb:bb:bb:bb:bb"}
+
+
+def test_duplicate_ssid_links_all_bssids():
+    bssids = [f"aa:aa:aa:aa:aa:0{i}" for i in range(6)]
+    snap = _snap(
+        link=WirelessLink(connected=True, ssid="nibrocsolutions", bssid=bssids[0], signal_dbm=-50, security="WPA2-PSK"),
+        nearby=[
+            NearbyNetwork(ssid="nibrocsolutions", bssid=mac, channel=36, band="5 GHz", security="WPA2-PSK")
+            for mac in bssids
+        ],
+    )
+    twin = next(c for c in analyze(snap) if c.id == "evil-twin")
+    assert "6 different BSSIDs" in twin.detail
+    assert [link.value for link in twin.links if link.kind == "bssid"] == bssids
 
 
 def test_demo_snapshot_has_chart_history():

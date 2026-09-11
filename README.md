@@ -60,9 +60,9 @@ Each area of the product is a first-class section in the sidebar:
 | **Concerns** | Ranked issues: weak signal, open/WEP/WPA1, duplicate SSID, crowded channels, new devices, DNS/WAN failure, hot Pi, interface errors |
 | **Connection** | Association, BSSID, band/channel, RSSI, bitrates, power save, retries, missed beacons |
 | **Access point** | Serving BSS security/ciphers, gateway IP, subnet, gateway reachability |
-| **Nearby networks** | Every BSS the radio can hear: signal, channel, encryption, vendor, hidden/duplicate flags |
+| **Nearby networks** | Every BSS the radio can hear: signal, channel, encryption, vendor, hidden/duplicate flags. Concerns link straight to the offending BSSID. |
 | **LAN devices** | Neighbors from ARP / arp-scan / nmap host discovery, with gateway and “this host” tags |
-| **Traffic** | Per-interface rates and a rolling throughput history |
+| **Live traffic** | Live sockets, listeners, top remotes, unusual-flow concerns, throughput history, and an investigation playbook |
 | **Internet** | DNS, public IP, probe RTT/loss to 1.1.1.1 and 8.8.8.8 |
 | **Interfaces** | Addresses, counters, errors/drops, routing table |
 | **System** | Pi model, OS, CPU, memory, SoC temperature, collector capabilities |

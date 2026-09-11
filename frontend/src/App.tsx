@@ -3,7 +3,8 @@ import { SnapshotProvider } from "./api";
 import { Layout } from "./components/Layout";
 import { AccessPointPage, ConnectionPage } from "./pages/Connection";
 import { DevicesPage, NearbyPage } from "./pages/Discovery";
-import { InterfacesPage, InternetPage, SystemPage, TrafficPage } from "./pages/Ops";
+import { InterfacesPage, InternetPage, SystemPage } from "./pages/Ops";
+import { TrafficPage } from "./pages/Traffic";
 import { ConcernsPage, OverviewPage } from "./pages/Overview";
 
 export default function App() {

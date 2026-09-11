@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import re
 from typing import Any
 
@@ -384,3 +385,142 @@ def parse_meminfo(text: str) -> tuple[float | None, float | None]:
     if avail:
         used_mb = (int(total.group(1)) - int(avail.group(1))) / 1024.0
     return total_mb, used_mb
+
+
+TCP_STATES = {
+    "01": "ESTABLISHED",
+    "02": "SYN_SENT",
+    "03": "SYN_RECV",
+    "04": "FIN_WAIT1",
+    "05": "FIN_WAIT2",
+    "06": "TIME_WAIT",
+    "07": "CLOSE",
+    "08": "CLOSE_WAIT",
+    "09": "LAST_ACK",
+    "0A": "LISTEN",
+    "0B": "CLOSING",
+}
+
+
+def parse_proc_ip_port(addr: str) -> tuple[str | None, int | None]:
+    if ":" not in addr:
+        return None, None
+    ip_hex, port_hex = addr.rsplit(":", 1)
+    try:
+        port = int(port_hex, 16)
+    except ValueError:
+        return None, None
+    try:
+        raw = bytes.fromhex(ip_hex)
+    except ValueError:
+        return None, None
+    if len(raw) == 4:
+        return ".".join(str(b) for b in reversed(raw)), port
+    if len(raw) == 16:
+        # /proc/net/tcp6 stores IPv4-mapped and IPv6 in network dword-swapped form.
+        groups = [raw[i : i + 4][::-1].hex() for i in range(0, 16, 4)]
+        packed = bytes.fromhex("".join(groups))
+        try:
+            return str(ipaddress.IPv6Address(packed)), port
+        except ipaddress.AddressValueError:
+            return None, port
+    return None, port
+
+
+def parse_proc_net_table(text: str, protocol: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for line in text.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) < 4:
+            continue
+        local_ip, local_port = parse_proc_ip_port(parts[1])
+        remote_ip, remote_port = parse_proc_ip_port(parts[2])
+        state = TCP_STATES.get(parts[3].upper(), parts[3]) if protocol == "tcp" else "UNCONN"
+        queues = parts[4].split(":") if len(parts) > 4 else ["0", "0"]
+        try:
+            tx_q = int(queues[0], 16)
+            rx_q = int(queues[1], 16) if len(queues) > 1 else 0
+        except ValueError:
+            tx_q, rx_q = 0, 0
+        rows.append(
+            {
+                "protocol": protocol,
+                "state": state,
+                "local_ip": local_ip,
+                "local_port": local_port,
+                "remote_ip": remote_ip,
+                "remote_port": remote_port,
+                "send_q": tx_q,
+                "recv_q": rx_q,
+            }
+        )
+    return rows
+
+
+def parse_ss(output: str) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for raw in output.splitlines():
+        line = raw.strip()
+        if not line or line.lower().startswith("netid") or line.lower().startswith("state"):
+            continue
+        proc = None
+        users = re.search(r'users:\(\("(.*?)"', line)
+        if users:
+            proc = users.group(1)
+            line = re.sub(r"\s*users:.*$", "", line)
+        parts = line.split()
+        if len(parts) < 5:
+            continue
+        protocol = parts[0].lower()
+        if protocol not in {"tcp", "udp", "tcp6", "udp6"}:
+            continue
+        proto = protocol.replace("6", "")
+        # ss -H -tuanap: Netid State Recv-Q Send-Q Local Address:Port Peer Address:Port
+        if parts[1].isdigit():
+            state = "UNCONN" if proto == "udp" else None
+            recv_q = int(parts[1])
+            send_q = int(parts[2]) if parts[2].isdigit() else 0
+            local = parts[3]
+            remote = parts[4] if len(parts) > 4 else "*:*"
+        else:
+            state = parts[1]
+            recv_q = int(parts[2]) if parts[2].isdigit() else 0
+            send_q = int(parts[3]) if parts[3].isdigit() else 0
+            local = parts[4]
+            remote = parts[5] if len(parts) > 5 else "*:*"
+        local_ip, local_port = _split_ss_endpoint(local)
+        remote_ip, remote_port = _split_ss_endpoint(remote)
+        rows.append(
+            {
+                "protocol": proto,
+                "state": state,
+                "local_ip": local_ip,
+                "local_port": local_port,
+                "remote_ip": remote_ip,
+                "remote_port": remote_port,
+                "recv_q": recv_q,
+                "send_q": send_q,
+                "process": proc,
+            }
+        )
+    return rows
+
+
+def _split_ss_endpoint(value: str) -> tuple[str | None, int | None]:
+    if not value or value in {"*", "*:*"}:
+        return None, None
+    cleaned = value.strip()
+    if cleaned.startswith("[") and "]:" in cleaned:
+        host, port = cleaned.rsplit("]:", 1)
+        host = host[1:]
+    elif cleaned.count(":") == 1:
+        host, port = cleaned.split(":")
+    else:
+        host, port = cleaned.rsplit(":", 1)
+    if host in {"*", ""}:
+        host = None
+    try:
+        port_i = int(port)
+    except ValueError:
+        port_i = None
+    return host, port_i

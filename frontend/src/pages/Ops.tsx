@@ -1,73 +1,7 @@
-import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useSearchParams } from "react-router-dom";
 import { useSnapshot } from "../api";
-import { dash, formatBps, formatBytes } from "../format";
+import { dash, formatBytes } from "../format";
 import { Badge, KeyValue } from "../components/Widgets";
-
-export function TrafficPage() {
-  const { snapshot } = useSnapshot();
-  if (!snapshot) return <div className="card empty">Collecting the first sample…</div>;
-  const chart = snapshot.history.map((p) => ({
-    t: new Date(p.ts * 1000).toLocaleTimeString([], { minute: "2-digit", second: "2-digit" }),
-    down: Math.round(p.rx_bps),
-    up: Math.round(p.tx_bps),
-    signal: p.signal_dbm,
-  }));
-
-  return (
-    <>
-      <div className="card">
-        <h3>Throughput history</h3>
-        <div className="chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chart}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-              <XAxis dataKey="t" stroke="#617487" tick={{ fill: "#8ea3b5", fontSize: 11 }} />
-              <YAxis stroke="#617487" tick={{ fill: "#8ea3b5", fontSize: 11 }} tickFormatter={(v) => formatBps(v)} />
-              <Tooltip
-                contentStyle={{ background: "#101824", border: "1px solid rgba(168,197,218,0.16)", borderRadius: 12 }}
-                formatter={(value, name) =>
-                  name === "signal" ? `${value} dBm` : formatBps(Number(value))
-                }
-              />
-              <Area type="monotone" dataKey="down" name="Down" stroke="#3ee0a4" fill="#3ee0a4" fillOpacity={0.18} />
-              <Area type="monotone" dataKey="up" name="Up" stroke="#6ea8ff" fill="#6ea8ff" fillOpacity={0.08} />
-              <Line type="monotone" dataKey="signal" name="signal" stroke="#f0b429" dot={false} hide />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      <div className="card">
-        <h3>Per-interface counters</h3>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Interface</th>
-                <th>Down</th>
-                <th>Up</th>
-                <th>RX bytes</th>
-                <th>TX bytes</th>
-                <th>Errors</th>
-              </tr>
-            </thead>
-            <tbody>
-              {snapshot.traffic.map((t) => (
-                <tr key={t.interface}>
-                  <td>{t.interface}</td>
-                  <td>{formatBps(t.rx_bps)}</td>
-                  <td>{formatBps(t.tx_bps)}</td>
-                  <td className="mono">{formatBytes(t.rx_bytes)}</td>
-                  <td className="mono">{formatBytes(t.tx_bytes)}</td>
-                  <td>{t.rx_errors + t.tx_errors}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
-  );
-}
 
 export function InternetPage() {
   const { snapshot } = useSnapshot();
@@ -121,11 +55,13 @@ export function InternetPage() {
 
 export function InterfacesPage() {
   const { snapshot } = useSnapshot();
+  const [params] = useSearchParams();
+  const focus = (params.get("focus") || "").toLowerCase();
   if (!snapshot) return <div className="card empty">Collecting the first sample…</div>;
   return (
     <>
       {snapshot.interfaces.map((iface) => (
-        <div className="card" key={iface.name}>
+        <div className={`card ${focus === iface.name.toLowerCase() ? "highlight" : ""}`} key={iface.name} id={`row-${iface.name}`}>
           <div className="toolbar">
             <h3 style={{ margin: 0 }}>{iface.name}</h3>
             <div className="row-tags">

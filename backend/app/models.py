@@ -8,6 +8,14 @@ Severity = Literal["critical", "warning", "info"]
 HealthLevel = Literal["excellent", "good", "fair", "poor", "critical"]
 
 
+class ConcernLink(BaseModel):
+    label: str
+    href: str
+    kind: str = "item"
+    value: str = ""
+    meta: str | None = None
+
+
 class Concern(BaseModel):
     id: str
     severity: Severity
@@ -15,6 +23,7 @@ class Concern(BaseModel):
     detail: str
     section: str
     recommendation: str
+    links: list[ConcernLink] = Field(default_factory=list)
 
 
 class WirelessLink(BaseModel):
@@ -137,6 +146,55 @@ class TrafficPoint(BaseModel):
     signal_dbm: float | None = None
 
 
+class SocketFlow(BaseModel):
+    protocol: str
+    state: str | None = None
+    local_ip: str | None = None
+    local_port: int | None = None
+    remote_ip: str | None = None
+    remote_port: int | None = None
+    service: str | None = None
+    direction: str = "unknown"
+    scope: str = "unknown"
+    recv_q: int = 0
+    send_q: int = 0
+    process: str | None = None
+    new: bool = False
+    unusual: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class RemoteTalker(BaseModel):
+    ip: str
+    count: int = 0
+    ports: list[int] = Field(default_factory=list)
+    scope: str = "unknown"
+    service_hint: str | None = None
+
+
+class PortCount(BaseModel):
+    port: int
+    protocol: str
+    count: int
+    service: str | None = None
+
+
+class LiveTraffic(BaseModel):
+    captured_at: str | None = None
+    source: str | None = None
+    established: int = 0
+    listen: int = 0
+    udp: int = 0
+    syn_sent: int = 0
+    unique_remotes: int = 0
+    wan_remotes: int = 0
+    lan_remotes: int = 0
+    flows: list[SocketFlow] = Field(default_factory=list)
+    listeners: list[SocketFlow] = Field(default_factory=list)
+    top_remotes: list[RemoteTalker] = Field(default_factory=list)
+    top_ports: list[PortCount] = Field(default_factory=list)
+
+
 class SystemInfo(BaseModel):
     hostname: str | None = None
     os: str | None = None
@@ -171,6 +229,7 @@ class Snapshot(BaseModel):
     internet: InternetStatus = Field(default_factory=InternetStatus)
     traffic: list[TrafficSample] = Field(default_factory=list)
     history: list[TrafficPoint] = Field(default_factory=list)
+    live_traffic: LiveTraffic = Field(default_factory=LiveTraffic)
     system: SystemInfo = Field(default_factory=SystemInfo)
     gateway_ip: str | None = None
     local_ip: str | None = None
