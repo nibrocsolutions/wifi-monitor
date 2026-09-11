@@ -10,7 +10,7 @@ RUN npm run build
 FROM python:3.12-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    WIFI_MONITOR_PORT=8080 \
+    WIFI_MONITOR_PORT=8085 \
     WIFI_MONITOR_DATA_DIR=/data
 
 RUN apt-get update \
@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY --from=frontend /ui/dist ./static
 
-EXPOSE 8080
+EXPOSE 8085
 VOLUME ["/data"]
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "python -m uvicorn app.main:app --host 0.0.0.0 --port ${WIFI_MONITOR_PORT:-8085}"]

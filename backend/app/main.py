@@ -17,7 +17,7 @@ from .concerns import analyze, health_level, score_concerns, summarize
 from .models import Snapshot
 
 DATA_DIR = os.environ.get("WIFI_MONITOR_DATA_DIR", "/data")
-PORT = int(os.environ.get("WIFI_MONITOR_PORT", "8080"))
+PORT = int(os.environ.get("WIFI_MONITOR_PORT", "8085"))
 DEMO = os.environ.get("WIFI_MONITOR_DEMO", "").lower() in {"1", "true", "yes"}
 POLL_SECONDS = float(os.environ.get("WIFI_MONITOR_POLL", "5"))
 

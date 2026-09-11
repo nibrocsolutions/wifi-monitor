@@ -24,4 +24,4 @@ fi
 ip_addr="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
 echo "WiFi Monitor is running."
-echo "Open http://${ip_addr:-127.0.0.1}:8080 from a browser on the same network."
+echo "Open http://${ip_addr:-127.0.0.1}:8085 from a browser on the same network."

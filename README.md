@@ -20,7 +20,7 @@ That is the whole install. `install.sh` runs:
 docker compose up -d --build
 ```
 
-Then open **http://\<pi-ip\>:8080** from a phone or laptop on the same LAN.
+Then open **http://\<pi-ip\>:8085** from a phone or laptop on the same LAN.
 
 The container uses **host networking** and **privileged** mode so `iw` can talk to the Pi’s Wi‑Fi radio. Without those, the dashboard can still show host metrics, but nearby-network scans will be empty.
 
@@ -38,7 +38,7 @@ Equivalent `docker run` after a local build:
 docker build -t wifi-monitor:local .
 docker run -d --name wifi-monitor --network host --privileged \
   -v wifi-monitor-data:/data \
-  -e WIFI_MONITOR_PORT=8080 \
+  -e WIFI_MONITOR_PORT=8085 \
   wifi-monitor:local
 ```
 
@@ -75,7 +75,7 @@ On a machine without a Wi‑Fi radio (or before you deploy to the Pi), you can p
 
 ```bash
 WIFI_MONITOR_DEMO=1 WIFI_MONITOR_DATA_DIR=./data \
-  PYTHONPATH=backend python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8080
+  PYTHONPATH=backend python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8085
 ```
 
 The banner **Demo data** is shown whenever sample wireless data is injected.
@@ -93,13 +93,13 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api` to port 8080. Run the API with demo mode in another terminal.
+The Vite dev server proxies `/api` to port 8085. Run the API with demo mode in another terminal.
 
 ## Configuration
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `WIFI_MONITOR_PORT` | `8080` | Listen port (host network) |
+| `WIFI_MONITOR_PORT` | `8085` | Listen port (host network) |
 | `WIFI_MONITOR_DATA_DIR` | `/data` | Device history |
 | `WIFI_MONITOR_POLL` | `5` | Snapshot interval, seconds |
 | `WIFI_MONITOR_IFACE` | auto | Force a wireless interface name |
@@ -110,4 +110,4 @@ The Vite dev server proxies `/api` to port 8080. Run the API with demo mode in a
 
 This monitor is for **your** LAN and the SSID the Pi is already joined to. It performs standard host discovery (`ip neigh`, optional `arp-scan`, optional `nmap -sn`) and a passive/privileged `iw scan`. It does not include exploit payloads or attack workflows.
 
-Keep the dashboard on a trusted network. Host networking binds port 8080 on the Pi; put a reverse proxy or firewall in front of it if the Pi is reachable beyond your home LAN.
+Keep the dashboard on a trusted network. Host networking binds port 8085 on the Pi; put a reverse proxy or firewall in front of it if the Pi is reachable beyond your home LAN.
